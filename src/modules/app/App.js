@@ -31,7 +31,7 @@ const styles = StyleSheet.create({
 
 const initialValues = {
   initialValues: {
-    server: 'https://heutagogy.herokuapp.com',
+    server: 'http://10.0.2.2:5000',
   }
 }
 

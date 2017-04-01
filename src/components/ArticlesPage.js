@@ -26,6 +26,8 @@ BackAndroid.addEventListener('hardwareBackPress', () => {
 });
 
 export default class ArticlesPage extends Component { // eslint-disable-line
+  webview = null;
+
   constructor(props) {
     super(props)
 
@@ -105,6 +107,14 @@ export default class ArticlesPage extends Component { // eslint-disable-line
     />)
   }
 
+  onMessage = e => console.log('nativeEvent', e.nativeEvent.data)
+
+  postMessage = () => {
+    if (this.webview) {
+      this.webview.postMessage('highlight');
+    }
+  }
+
   renderScene = (route, navigator) => {
     if (route.type === 'list') {
       return <ListView
@@ -144,8 +154,35 @@ export default class ArticlesPage extends Component { // eslint-disable-line
       `;
 
       return <WebView
-        source={{ html: `${css} ${content.get('html')}` }}
+        source={{ uri: 'https://drets.life' }}
+        ref={webview => { this.webview = webview; }}
+        onMessage={this.onMessage}
         scalesPageToFit
+        injectedJavaScript="
+        function highlightSelection() {
+            var userSelection = window.getSelection().getRangeAt(0);
+            highlightRange(userSelection);
+        }
+
+        function highlightRange(range) {
+            var newNode = document.createElement('div');
+            newNode.setAttribute(
+               'style',
+               'background-color: yellow; display: inline;'
+            );
+            range.surroundContents(newNode);
+        }
+
+        document.addEventListener('message', function(event){
+          if (event.data === 'highlight') {
+            highlightSelection();
+          }
+        });
+
+        document.addEventListener('selectionchange', function() {
+          window.postMessage('Hello: ' + window.getSelection().toString());
+        });"
+
       />
     }
   }
@@ -166,6 +203,7 @@ export default class ArticlesPage extends Component { // eslint-disable-line
           }}
           onRightElementPress={this.handleMenuPress}
         />
+        <Button title="Send Message to Web View" enabled onPress={this.postMessage} />
         <Navigator
           ref={(nav) => { navigator = nav }}
           initialRoute={{ type: 'list' }}
